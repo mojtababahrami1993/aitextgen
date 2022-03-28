@@ -551,8 +551,8 @@ class aitextgen:
 
     def train(
         self,
-        train_data: Union[str, np.ndarray, TokenDataset],
-        val_data: Union[str, np.ndarray, TokenDataset],
+        train_data: Union[str, list, np.ndarray, TokenDataset],
+        val_data: Union[str, dict, np.ndarray, TokenDataset],
         val_num_steps = 1000,
         validate_every = 1000,
         output_dir: str = "trained_model",
