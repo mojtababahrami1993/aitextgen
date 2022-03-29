@@ -26,7 +26,7 @@ from transformers import (
 from transformers.models.gpt2.convert_gpt2_original_tf_checkpoint_to_pytorch import (
     convert_gpt2_checkpoint_to_pytorch,
 )
-
+from .metrics import BELU
 from .colab import create_gdrive_folder
 from .TokenDataset import TokenDataset
 from .train import ATGProgressBar, ATGTransformer
@@ -553,6 +553,7 @@ class aitextgen:
         self,
         train_data: Union[str, list, np.ndarray, TokenDataset],
         val_data: Union[str, dict, np.ndarray, TokenDataset],
+        metrics=[BELU('belu', max_size=20000, n_gram=2)],
         val_num_steps = 1000,
         validate_every = 1000,
         output_dir: str = "trained_model",
@@ -591,6 +592,7 @@ class aitextgen:
         a string containing the text to be trained (shortcut instead of dataset) or a numpy array
         :param val_data: Either a TokenDataset containing the samples to be validated, or
         a string containing the text to be validated (shortcut instead of dataset) or a numpy array
+        :param metrics: List of desired "Metric" object that are interested during training.
         :param validate_every: Number of steps for each time to run validation
         :param output_dir: A string indicating where to store the resulting
         model file folder.
@@ -651,6 +653,9 @@ class aitextgen:
             else:
                 train_data = TokenDataset(**dict(dataset_params, texts=train_data))
 
+        for metric in metrics:
+            metric.init_parameters(train_data)
+
         if isinstance(val_data, (str, list, np.ndarray, dict)):
             logger.info(
                 f"Loading text from val_data with generation length of {block_size}."
@@ -707,7 +712,7 @@ class aitextgen:
         )
 
         # Wrap the model in a pytorch-lightning module
-        train_model = ATGTransformer(self.model, train_data, val_data, hparams, self.tokenizer)
+        train_model = ATGTransformer(self.model, train_data, val_data, hparams, self.tokenizer, metrics)
 
         # Begin training
         if seed:
