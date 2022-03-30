@@ -20,14 +20,15 @@ class ATGTransformer(pl.LightningModule):
     A training module for aitextgen.
     """
 
-    def __init__(self, model, train_dataset, val_datasets_dict, hparams, tokenizer):
+    def __init__(self, model, train_dataset, val_datasets_dict, hparams, tokenizer, metrics):
         super(ATGTransformer, self).__init__()
-        self.model, self.train_dataset, self.val_datasets_dict, self.val_dataset_names, self.tokenizer = (
+        self.model, self.train_dataset, self.val_datasets_dict, self.val_dataset_names, self.tokenizer, self.metrics = (
             model,
             train_dataset,
             val_datasets_dict,
             list(val_datasets_dict.keys()),
             tokenizer,
+            metrics,
         )
         self.save_hyperparameters(hparams)
 
@@ -265,6 +266,11 @@ class ATGProgressBar(ProgressBarBase):
             temperature=0.7,
             pad_token_id=pad_token_id,
         )
+
+        metrics_value = {}
+        for metric in pl_module.metrics:
+            metrics_value[metric.name] = metric.calculate_batch(outputs)
+        trainer.logger.log_metrics(metrics_value, self.steps)
 
         gen_texts = pl_module.tokenizer.batch_decode(outputs, skip_special_tokens=True)
 
