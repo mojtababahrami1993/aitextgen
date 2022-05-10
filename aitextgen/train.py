@@ -55,17 +55,22 @@ class ATGTransformer(pl.LightningModule):
 
     def validation_step(self, batch, batch_num):
         val_loss = {}
+        val_pred = {}
         for name in self.val_dataset_names:
             outputs = self({"input_ids": batch[name], "labels": batch[name]})
             val_loss[name] = outputs[0]
-        return val_loss
+            val_pred[name] = torch.argmax(outputs[1], dim=2)
+        return {'loss': val_loss, 'pred': val_pred}
 
     def validation_epoch_end(self, val_step_outputs):
-        val_losses = {}
         number_of_outputs = len(val_step_outputs)
         for name in self.val_dataset_names:
-            val_loss = sum(out[name] for out in val_step_outputs) / number_of_outputs
+            val_loss = sum(out['loss'][name] for out in val_step_outputs) / number_of_outputs
             self.log(name + '_val_loss', val_loss)
+            val_pred = torch.cat(
+                [out['pred'][name] for out in val_step_outputs[:min(5, number_of_outputs)]], dim=0)
+            for metric in self.metrics:
+                self.log(name + '_' + metric.name + '_metric', metric.calculate_batch(val_pred))
 
     def train_dataloader(self):
         return DataLoader(
@@ -117,18 +122,18 @@ class ATGProgressBar(ProgressBarBase):
     """A variant progress bar that works off of steps and prints periodically."""
 
     def __init__(
-        self,
-        save_every,
-        generate_every,
-        output_dir,
-        n_generate,
-        gpu,
-        smoothing,
-        run_id,
-        save_gdrive,
-        progress_bar_refresh_rate,
-        train_transformers_only,
-        num_layers_freeze,
+            self,
+            save_every,
+            generate_every,
+            output_dir,
+            n_generate,
+            gpu,
+            smoothing,
+            run_id,
+            save_gdrive,
+            progress_bar_refresh_rate,
+            train_transformers_only,
+            num_layers_freeze,
     ):
         super().__init__()
         self.enabled = True
@@ -177,9 +182,12 @@ class ATGProgressBar(ProgressBarBase):
         avg_val_loss = sum([trainer.logged_metrics[name + '_val_loss'] \
                             for name in pl_module.val_dataset_names]) / len(pl_module.val_dataset_names)
         try:
+            trainer.logger.log_metrics({"Avg Loss": self.prev_avg_loss}, self.steps)
+            trainer.logger.log_metrics({"Avg Val Loss": avg_val_loss}, self.steps)
             self.main_progress_bar.write(f"Train Avg Loss: {self.prev_avg_loss:.3f}")
             self.main_progress_bar.write(f"Val Avg Loss: {avg_val_loss:.3f}")
         except AttributeError:
+            trainer.logger.log_metrics({"Avg Loss": self.prev_avg_loss}, self.steps)
             print(f"Val Avg Loss: {avg_val_loss:.3f}")
 
     def on_batch_end(self, trainer, pl_module):
@@ -267,10 +275,10 @@ class ATGProgressBar(ProgressBarBase):
             pad_token_id=pad_token_id,
         )
 
-        metrics_value = {}
-        for metric in pl_module.metrics:
-            metrics_value[metric.name] = metric.calculate_batch(outputs)
-        trainer.logger.log_metrics(metrics_value, self.steps)
+        # metrics_value = {}
+        # for metric in pl_module.metrics:
+        # metrics_value[metric.name] = metric.calculate_batch(outputs)
+        # trainer.logger.log_metrics(metrics_value, self.steps)
 
         gen_texts = pl_module.tokenizer.batch_decode(outputs, skip_special_tokens=True)
 

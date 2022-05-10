@@ -51,29 +51,29 @@ class TokenDataset(Dataset):
     """
 
     def __init__(
-        self,
-        file_path: str = None,
-        vocab_file: str = os.path.join(STATIC_PATH, "gpt2_vocab.json"),
-        merges_file: str = os.path.join(STATIC_PATH, "gpt2_merges.txt"),
-        tokenizer: GPT2TokenizerFast = None,
-        tokenizer_file: str = None,
-        texts: List[str] = None,
-        line_by_line: bool = False,
-        from_cache: bool = False,
-        header: bool = True,
-        save_cache: bool = False,
-        cache_destination: str = "dataset_cache.tar.gz",
-        compress: bool = True,
-        block_size: int = 1024,
-        tokenized_texts: bool = False,
-        text_delim: str = "\n",
-        bos_token: str = "<|endoftext|>",
-        eos_token: str = "<|endoftext|>",
-        unk_token: str = "<|endoftext|>",
-        pad_token: str = "<|endoftext|>",
-        progress_bar_refresh_rate: int = 20,
-        num_steps = None,
-        **kwargs,
+            self,
+            file_path: str = None,
+            vocab_file: str = os.path.join(STATIC_PATH, "gpt2_vocab.json"),
+            merges_file: str = os.path.join(STATIC_PATH, "gpt2_merges.txt"),
+            tokenizer: GPT2TokenizerFast = None,
+            tokenizer_file: str = None,
+            texts: List[str] = None,
+            line_by_line: bool = False,
+            from_cache: bool = False,
+            header: bool = True,
+            save_cache: bool = False,
+            cache_destination: str = "dataset_cache.tar.gz",
+            compress: bool = True,
+            block_size: int = 1024,
+            tokenized_texts: bool = False,
+            text_delim: str = "\n",
+            bos_token: str = "<|endoftext|>",
+            eos_token: str = "<|endoftext|>",
+            unk_token: str = "<|endoftext|>",
+            pad_token: str = "<|endoftext|>",
+            progress_bar_refresh_rate: int = 20,
+            num_steps=None,
+            **kwargs,
     ) -> None:
 
         self.line_by_line = False
@@ -180,7 +180,7 @@ class TokenDataset(Dataset):
             )
 
         assert (
-            self.tokens.shape[0] >= block_size
+                self.tokens.shape[0] >= block_size
         ), f"There are fewer than {block_size} encoded tokens."
         self.num_subsets = self.tokens.shape[0] - block_size
         self.block_size = block_size
@@ -189,7 +189,7 @@ class TokenDataset(Dataset):
             self.save(cache_destination, compress=compress)
 
     def save(
-        self, cache_destination: str = "dataset_cache.tar.gz", compress: bool = True
+            self, cache_destination: str = "dataset_cache.tar.gz", compress: bool = True
     ) -> None:
         assert self.tokens.shape[0] > 0, "No data loaded to save."
 
@@ -218,7 +218,7 @@ class TokenDataset(Dataset):
 
     def __getitem__(self, item: int) -> torch.Tensor:
         return torch.as_tensor(
-            self.tokens[item : (item + self.block_size)].astype(np.int64, copy=False),
+            self.tokens[item: (item + self.block_size)].astype(np.int64, copy=False),
             dtype=torch.long,
         )
 
@@ -269,13 +269,13 @@ def get_dtype(vocab_size: int):
 
 
 def encode_tokens_from_file(
-    file_path: str,
-    eos_token: str,
-    tokenizer: GPT2TokenizerFast,
-    newline: str,
-    header: bool = True,
-    progress_bar_refresh_rate: int = 20,
-    batch_size: int = 1024,
+        file_path: str,
+        eos_token: str,
+        tokenizer: GPT2TokenizerFast,
+        newline: str,
+        header: bool = True,
+        progress_bar_refresh_rate: int = 20,
+        batch_size: int = 1024,
 ) -> List[int]:
     """
     Retrieves texts from a newline-delimited file/CSV and returns texts.
@@ -347,7 +347,7 @@ def encode_tokens_from_file(
                         axis=1,
                     )
                 tokens[
-                    (num_batches * batch_size) + i, : len(encoded_text)
+                (num_batches * batch_size) + i, : len(encoded_text)
                 ] = encoded_text
 
             num_batches += 1
@@ -363,11 +363,11 @@ def encode_tokens_from_file(
 
 
 def encode_tokens_from_list(
-    texts: List[str],
-    eos_token: str,
-    tokenizer: GPT2TokenizerFast,
-    progress_bar_refresh_rate: int = 20,
-    batch_size: int = 1024,
+        texts: List[str],
+        eos_token: str,
+        tokenizer: GPT2TokenizerFast,
+        progress_bar_refresh_rate: int = 20,
+        batch_size: int = 1024,
 ) -> List[int]:
     """
     Retrieves texts from a newline-delimited file/CSV and returns texts.
@@ -384,13 +384,12 @@ def encode_tokens_from_list(
         dynamic_ncols=True,
     )
     tokens = np.full((len(texts), 1), -1, dtype=a_dtype)
-
     for i_start in range(num_texts // batch_size + 1):
         batch = [
             text + eos_token
             for text in texts[
-                (i_start * batch_size) : ((i_start * batch_size) + batch_size)
-            ]
+                        (i_start * batch_size): ((i_start * batch_size) + batch_size)
+                        ]
         ]
 
         encoded_texts = tokenizer(
@@ -439,7 +438,7 @@ def merge_datasets(datasets: List[TokenDataset], equalize: bool = True) -> Token
     """
 
     assert (
-        isinstance(datasets, list) and len(datasets) > 1
+            isinstance(datasets, list) and len(datasets) > 1
     ), "datasets must be a list of multiple TokenDatasets."
 
     len_smallest = min([len(dataset) for dataset in datasets])
@@ -449,7 +448,7 @@ def merge_datasets(datasets: List[TokenDataset], equalize: bool = True) -> Token
 
     for dataset in datasets:
         assert (
-            dataset.block_size == block_size
+                dataset.block_size == block_size
         ), "The input datasets have different block sizes."
         if equalize:
             tokenized_texts.extend(dataset.tokens[0:len_smallest])

@@ -8,7 +8,7 @@ from datetime import datetime
 from random import randint
 from typing import List, Optional, Union
 import numpy as np
-
+from .metric import BELU
 import pytorch_lightning as pl
 import torch
 from pkg_resources import resource_filename
@@ -26,7 +26,7 @@ from transformers import (
 from transformers.models.gpt2.convert_gpt2_original_tf_checkpoint_to_pytorch import (
     convert_gpt2_checkpoint_to_pytorch,
 )
-from .metrics import BELU
+
 from .colab import create_gdrive_folder
 from .TokenDataset import TokenDataset
 from .train import ATGProgressBar, ATGTransformer
@@ -79,31 +79,31 @@ class aitextgen:
     pad_token = "<|endoftext|>"
 
     def __init__(
-        self,
-        model: str = None,
-        model_folder: str = None,
-        config: Union[str, GPT2Config] = None,
-        vocab_file: str = None,
-        merges_file: str = None,
-        tokenizer_file: str = None,
-        schema_tokens: List[str] = None,
-        schema_return: List[str] = None,
-        cache_dir: str = "aitextgen",
-        tf_gpt2: str = None,
-        to_gpu: bool = False,
-        to_fp16: bool = False,
-        verbose: bool = False,
-        gradient_checkpointing: bool = False,
-        bos_token: str = None,
-        eos_token: str = None,
-        unk_token: str = None,
-        **kwargs,
+            self,
+            model: str = None,
+            model_folder: str = None,
+            config: Union[str, GPT2Config] = None,
+            vocab_file: str = None,
+            merges_file: str = None,
+            tokenizer_file: str = None,
+            schema_tokens: List[str] = None,
+            schema_return: List[str] = None,
+            cache_dir: str = "aitextgen",
+            tf_gpt2: str = None,
+            to_gpu: bool = False,
+            to_fp16: bool = False,
+            verbose: bool = False,
+            gradient_checkpointing: bool = False,
+            bos_token: str = None,
+            eos_token: str = None,
+            unk_token: str = None,
+            **kwargs,
     ) -> None:
 
         if model:
             assert not os.path.isfile(model), (
-                "As of aitextgen 0.5.0, you must "
-                + "use `model_folder` to load an existing model."
+                    "As of aitextgen 0.5.0, you must "
+                    + "use `model_folder` to load an existing model."
             )
 
         if not verbose:
@@ -122,7 +122,7 @@ class aitextgen:
 
             # Download + convert the TF weights if a PyTorch model has not been created
             if not os.path.isfile(
-                os.path.join(cache_dir, f"pytorch_model_{tf_gpt2}.bin")
+                    os.path.join(cache_dir, f"pytorch_model_{tf_gpt2}.bin")
             ):
                 assert tf_gpt2 in [
                     "124M",
@@ -275,24 +275,24 @@ class aitextgen:
             self.to_gpu()
 
     def generate(
-        self,
-        n: int = 1,
-        prompt: str = "",
-        prepend_bos: bool = None,
-        min_length: int = None,
-        max_length: int = 256,
-        temperature: float = 0.7,
-        do_sample: bool = True,
-        return_as_list: bool = False,
-        seed: int = None,
-        pad_token_id: str = None,
-        schema: str = False,
-        normalize_key: bool = True,
-        use_cache: bool = True,
-        lstrip: bool = True,
-        nonempty_output: bool = True,
-        skip_special_tokens: bool = True,
-        **kwargs,
+            self,
+            n: int = 1,
+            prompt: str = "",
+            prepend_bos: bool = None,
+            min_length: int = None,
+            max_length: int = 256,
+            temperature: float = 0.7,
+            do_sample: bool = True,
+            return_as_list: bool = False,
+            seed: int = None,
+            pad_token_id: str = None,
+            schema: str = False,
+            normalize_key: bool = True,
+            use_cache: bool = True,
+            lstrip: bool = True,
+            nonempty_output: bool = True,
+            skip_special_tokens: bool = True,
+            **kwargs,
     ) -> Optional[str]:
         """
         Generates texts using the stored Transformers model.
@@ -479,7 +479,7 @@ class aitextgen:
         return self.generate(n=1, return_as_list=True, **kwargs)[0]
 
     def generate_samples(
-        self, n: int = 3, temperatures: List[float] = [0.7, 1.0, 1.2], **kwargs
+            self, n: int = 3, temperatures: List[float] = [0.7, 1.0, 1.2], **kwargs
     ) -> None:
         """
         Prints multiple samples to console at specified temperatures.
@@ -490,13 +490,13 @@ class aitextgen:
             self.generate(n=n, temperature=temperature, return_as_list=False, **kwargs)
 
     def generate_to_file(
-        self,
-        n: int = 20,
-        batch_size: int = 1,
-        destination_path: str = None,
-        sample_delim: str = "=" * 20 + "\n",
-        seed: int = None,
-        **kwargs,
+            self,
+            n: int = 20,
+            batch_size: int = 1,
+            destination_path: str = None,
+            sample_delim: str = "=" * 20 + "\n",
+            seed: int = None,
+            **kwargs,
     ) -> None:
         """
         Generates a bulk amount of texts to a file, into a format
@@ -550,40 +550,40 @@ class aitextgen:
             reset_seed()
 
     def train(
-        self,
-        train_data: Union[str, list, np.ndarray, TokenDataset],
-        val_data: Union[str, dict, np.ndarray, TokenDataset],
-        metrics=[BELU('belu', max_size=20000, n_gram=2)],
-        val_num_steps = 1000,
-        validate_every = 1000,
-        output_dir: str = "trained_model",
-        fp16: bool = False,
-        fp16_opt_level: str = "O1",
-        n_gpu: int = -1,
-        tpu_cores: int = 0,
-        max_grad_norm: float = 0.5,
-        gradient_accumulation_steps: int = 1,
-        seed: int = None,
-        learning_rate: float = 1e-3,
-        weight_decay: float = 0.05,
-        adam_epsilon: float = 1e-8,
-        warmup_steps: int = 0,
-        num_steps: int = 5000,
-        save_every: int = 1000,
-        generate_every: int = 1000,
-        n_generate: int = 1,
-        loggers: List = None,
-        batch_size: int = 1,
-        num_workers: int = None,
-        benchmark: bool = True,
-        avg_loss_smoothing: float = 0.01,
-        save_gdrive: bool = False,
-        run_id: str = f"ATG_{datetime.utcnow():%Y%m%d_%H%M%S}",
-        progress_bar_refresh_rate: int = 20,
-        freeze_layers: bool = False,
-        num_layers_freeze: int = None,
-        use_deepspeed: bool = False,
-        **kwargs,
+            self,
+            train_data: Union[str, list, np.ndarray, TokenDataset],
+            val_data: Union[str, dict, np.ndarray, TokenDataset],
+            metrics=[BELU('belu', max_size=20000, n_gram=2)],
+            val_num_steps=1000,
+            validate_every=1000,
+            output_dir: str = "trained_model",
+            fp16: bool = False,
+            fp16_opt_level: str = "O1",
+            n_gpu: int = -1,
+            tpu_cores: int = 0,
+            max_grad_norm: float = 0.5,
+            gradient_accumulation_steps: int = 1,
+            seed: int = None,
+            learning_rate: float = 1e-3,
+            weight_decay: float = 0.05,
+            adam_epsilon: float = 1e-8,
+            warmup_steps: int = 0,
+            num_steps: int = 5000,
+            save_every: int = 1000,
+            generate_every: int = 1000,
+            n_generate: int = 1,
+            loggers: List = None,
+            batch_size: int = 1,
+            num_workers: int = None,
+            benchmark: bool = True,
+            avg_loss_smoothing: float = 0.01,
+            save_gdrive: bool = False,
+            run_id: str = f"ATG_{datetime.utcnow():%Y%m%d_%H%M%S}",
+            progress_bar_refresh_rate: int = 2,  # 20
+            freeze_layers: bool = False,
+            num_layers_freeze: int = None,
+            use_deepspeed: bool = False,
+            **kwargs,
     ) -> None:
         """
         Trains/finetunes the model on the provided file/dataset using pytorch-lightning.
@@ -627,7 +627,7 @@ class aitextgen:
 
         if save_gdrive:
             assert (
-                "google.colab" in sys.modules
+                    "google.colab" in sys.modules
             ), "You must be in Colaboratory to copy to your Google Drive"
             create_gdrive_folder(run_id)
 
@@ -637,7 +637,7 @@ class aitextgen:
         if isinstance(train_data, (str, list, np.ndarray)):
             block_size = model_max_length(self.model.config)
             logger.info(
-                f"Loading text from train_data with generation length of {block_size}."
+                f"LLoading text from train_data with generation length of {block_size}."
             )
 
             dataset_params = dict(
@@ -654,7 +654,8 @@ class aitextgen:
                 train_data = TokenDataset(**dict(dataset_params, texts=train_data))
 
         for metric in metrics:
-            metric.init_parameters(train_data)
+            metric.init_parameters(train_data.tokens,
+                                   eos_token_id=self.tokenizer.batch_encode_plus([self.eos_token])["input_ids"][0][0])
 
         if isinstance(val_data, (str, list, np.ndarray, dict)):
             logger.info(
@@ -667,7 +668,7 @@ class aitextgen:
                 eos_token=self.eos_token,
                 unk_token=self.unk_token,
                 block_size=block_size,
-                num_steps = val_num_steps,
+                num_steps=val_num_steps,
                 **kwargs)
 
             if isinstance(val_data, dict):
@@ -686,7 +687,7 @@ class aitextgen:
             freeze_layers = True
             if num_layers_freeze:
                 assert (
-                    num_layers_freeze < self.model.config.n_layer
+                        num_layers_freeze < self.model.config.n_layer
                 ), "You are freezing more Transformer layers than in the model."
 
         if num_workers is None:
@@ -743,6 +744,7 @@ class aitextgen:
                 logger.info("Setting FP16 to True for DeepSpeed ZeRO Training.")
                 fp16 = True
 
+        print("n_gpu: ", n_gpu, "is_gpu_used: ", is_gpu_used)
         train_params = dict(
             accumulate_grad_batches=gradient_accumulation_steps,
             gpus=n_gpu,
@@ -768,7 +770,7 @@ class aitextgen:
                 )
             ],
             plugins=deepspeed_plugin,
-            val_check_interval = validate_every,
+            val_check_interval=validate_every,
         )
 
         if fp16:
@@ -808,12 +810,12 @@ class aitextgen:
         return trainer, train_model
 
     def cross_train(
-        self,
-        inputs: List[TokenDataset],
-        learning_rate: Union[float, List[float]] = 1e-4,
-        num_steps: Union[int, List[int]] = 4000,
-        run_id: str = f"ATG_{datetime.utcnow():%Y%m%d_%H%M%S}",
-        **kwargs,
+            self,
+            inputs: List[TokenDataset],
+            learning_rate: Union[float, List[float]] = 1e-4,
+            num_steps: Union[int, List[int]] = 4000,
+            run_id: str = f"ATG_{datetime.utcnow():%Y%m%d_%H%M%S}",
+            **kwargs,
     ) -> None:
         """Trains a model across multiple input datasets, with automatic
         decay after each run."""
@@ -840,8 +842,8 @@ class aitextgen:
             num_steps = [int(num_steps / (2 ** x)) for x in range(len(datasets))]
 
         assert len(datasets) == len(learning_rate) == len(num_steps), (
-            "The provided learning_rates or num_steps"
-            + " is not equal to the number of inputs."
+                "The provided learning_rates or num_steps"
+                + " is not equal to the number of inputs."
         )
 
         for i, dataset in enumerate(datasets):
@@ -869,8 +871,8 @@ class aitextgen:
         self.tokenizer.save_pretrained(target_folder)
 
     def export(
-        self,
-        quantize: bool = True,
+            self,
+            quantize: bool = True,
     ) -> None:
         """
         Exports the model, with optional quantization
