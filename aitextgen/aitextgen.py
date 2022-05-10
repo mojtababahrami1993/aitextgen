@@ -8,7 +8,7 @@ from datetime import datetime
 from random import randint
 from typing import List, Optional, Union
 import numpy as np
-from .metric import BELU
+from .metrics import BELU
 import pytorch_lightning as pl
 import torch
 from pkg_resources import resource_filename
@@ -637,7 +637,7 @@ class aitextgen:
         if isinstance(train_data, (str, list, np.ndarray)):
             block_size = model_max_length(self.model.config)
             logger.info(
-                f"LLoading text from train_data with generation length of {block_size}."
+                f"Loading text from train_data with generation length of {block_size}."
             )
 
             dataset_params = dict(
