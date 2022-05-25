@@ -186,9 +186,8 @@ class ATGProgressBar(ProgressBarBase):
             trainer.logger.log_metrics({"Avg Val Loss": avg_val_loss}, self.steps)
             self.main_progress_bar.write(f"Train Avg Loss: {self.prev_avg_loss:.3f}")
             self.main_progress_bar.write(f"Val Avg Loss: {avg_val_loss:.3f}")
-        except AttributeError:
-            trainer.logger.log_metrics({"Avg Loss": self.prev_avg_loss}, self.steps)
-            print(f"Val Avg Loss: {avg_val_loss:.3f}")
+        except (AttributeError, ValueError):
+            trainer.logger.log_metrics({"Avg Val Loss": avg_val_loss}, self.steps)
 
     def on_batch_end(self, trainer, pl_module):
         super().on_batch_end(trainer, pl_module)
