@@ -64,6 +64,10 @@ class ATGTransformer(pl.LightningModule):
 
     def validation_epoch_end(self, val_step_outputs):
         number_of_outputs = len(val_step_outputs)
+        for ii in val_step_outputs:
+            for name in self.val_dataset_names:
+                  print(name, ii['pred'][name].shape)
+
         for name in self.val_dataset_names:
             val_loss = sum(out['loss'][name] for out in val_step_outputs) / number_of_outputs
             self.log(name + '_val_loss', val_loss)
