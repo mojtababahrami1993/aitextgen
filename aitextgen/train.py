@@ -64,17 +64,13 @@ class ATGTransformer(pl.LightningModule):
 
     def validation_epoch_end(self, val_step_outputs):
         number_of_outputs = len(val_step_outputs)
-        for ii in val_step_outputs:
-            for name in self.val_dataset_names:
-                  print(name, ii['pred'][name].shape)
-
         for name in self.val_dataset_names:
             val_loss = sum(out['loss'][name] for out in val_step_outputs) / number_of_outputs
             self.log(name + '_val_loss', val_loss)
-            val_pred = torch.cat(
-                [out['pred'][name] for out in val_step_outputs[:min(5, number_of_outputs)]], dim=0)
-            for metric in self.metrics:
-                self.log(name + '_' + metric.name + '_metric', metric.calculate_batch(val_pred))
+            # val_pred = torch.cat(
+            #     [out['pred'][name] for out in val_step_outputs[:min(5, number_of_outputs)]], dim=0)
+            # for metric in self.metrics:
+            #     self.log(name + '_' + metric.name + '_metric', metric.calculate_batch(val_pred))
 
     def train_dataloader(self):
         return DataLoader(
