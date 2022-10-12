@@ -30,6 +30,8 @@ class ATGTransformer(pl.LightningModule):
             tokenizer,
             metrics,
         )
+        if metrics is None:
+            self.metrics = []
         self.save_hyperparameters(hparams)
 
     def forward(self, inputs):
@@ -67,10 +69,11 @@ class ATGTransformer(pl.LightningModule):
         for name in self.val_dataset_names:
             val_loss = sum(out['loss'][name] for out in val_step_outputs) / number_of_outputs
             self.log(name + '_val_loss', val_loss)
-            # val_pred = torch.cat(
-            #     [out['pred'][name] for out in val_step_outputs[:min(5, number_of_outputs)]], dim=0)
-            # for metric in self.metrics:
-            #     self.log(name + '_' + metric.name + '_metric', metric.calculate_batch(val_pred))
+            if len(self.metrics) > 0:
+                val_pred = torch.cat(
+                    [out['pred'][name] for out in val_step_outputs[:min(5, number_of_outputs)]], dim=0)
+                for metric in self.metrics:
+                    self.log(name + '_' + metric.name + '_metric', metric.calculate_batch(val_pred))
 
     def train_dataloader(self):
         return DataLoader(
@@ -274,10 +277,11 @@ class ATGProgressBar(ProgressBarBase):
             pad_token_id=pad_token_id,
         )
 
-        # metrics_value = {}
-        # for metric in pl_module.metrics:
-        # metrics_value[metric.name] = metric.calculate_batch(outputs)
-        # trainer.logger.log_metrics(metrics_value, self.steps)
+
+        metrics_value = {}
+        for metric in pl_module.metrics:
+            metrics_value[metric.name] = metric.calculate_batch(outputs)
+            trainer.logger.log_metrics(metrics_value, self.steps)
 
         gen_texts = pl_module.tokenizer.batch_decode(outputs, skip_special_tokens=True)
 

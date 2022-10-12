@@ -553,7 +553,8 @@ class aitextgen:
             self,
             train_data: Union[str, list, np.ndarray, TokenDataset],
             val_data: Union[str, dict, np.ndarray, TokenDataset],
-            metrics=[BELU('belu', max_size=20000, n_gram=2)],
+            # metrics=[BELU('belu', max_size=20000, n_gram=2)],
+            metrics = None,
             val_num_steps=1000,
             validate_every=1000,
             output_dir: str = "trained_model",
@@ -652,10 +653,10 @@ class aitextgen:
                 train_data = TokenDataset(**dict(dataset_params, file_path=train_data))
             else:
                 train_data = TokenDataset(**dict(dataset_params, texts=train_data))
-
-        for metric in metrics:
-            metric.init_parameters(train_data.tokens,
-                                   eos_token_id=self.tokenizer.batch_encode_plus([self.eos_token])["input_ids"][0][0])
+        if metrics is not None:
+            for metric in metrics:
+                metric.init_parameters(train_data.tokens,
+                                       eos_token_id=self.tokenizer.batch_encode_plus([self.eos_token])["input_ids"][0][0])
 
         if isinstance(val_data, (str, list, np.ndarray, dict)):
             logger.info(
